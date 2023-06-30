@@ -36,6 +36,12 @@ struct EmojiArtDocumentView: View {
                             .font(.system(size: fontSize(for: emoji)))
                             .scaleEffect(zoomScale)
                             .position(position(for: emoji, in: geometry))
+                            .shadow(color: selectedEmojis.contains(where: { selectedEmoji in
+                                selectedEmoji.id == emoji.id
+                            }) ? Color.blue : Color.white, radius: 5)
+                            .onTapGesture {
+                                selectEmoji(emoji: emoji)
+                            }
                     }
                 }
             }
@@ -44,6 +50,16 @@ struct EmojiArtDocumentView: View {
                 return drop(providers: providers, at: location, in: geometry)
             }
             .gesture(panGesture().simultaneously(with:zoomGesture()))
+        }
+    }
+    
+    private func selectEmoji(emoji: EmojiArtModel.Emoji) {
+        if let selectedEmojiIndex = selectedEmojis.firstIndex(where: { selectedEmoji in
+            selectedEmoji.id == emoji.id
+        }) {
+            selectedEmojis.remove(at: selectedEmojiIndex)
+        } else {
+            selectedEmojis.append(emoji)
         }
     }
     
@@ -94,6 +110,8 @@ struct EmojiArtDocumentView: View {
     private func fontSize(for emoji: EmojiArtModel.Emoji) -> CGFloat {
         CGFloat(emoji.size)
     }
+    
+    @State private var selectedEmojis: [EmojiArtModel.Emoji] = []
     
     @State private var steadyStateZoomScale: CGFloat = 1
     @GestureState private var gestureZoomScale: CGFloat = 1
@@ -147,6 +165,8 @@ struct EmojiArtDocumentView: View {
             steadyStateZoomScale = min(hZoom, vZoom)
         }
     }
+    
+    
     
     var palette: some View {
         ScrollingEmojisView(emojis: randomEmojis)
