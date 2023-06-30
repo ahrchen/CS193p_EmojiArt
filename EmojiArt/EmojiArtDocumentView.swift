@@ -28,6 +28,9 @@ struct EmojiArtDocumentView: View {
                         .position(convertFromEmojiCoordinates((0,0), in: geometry))
                 )
                 .gesture(doubleTapToZoom(in: geometry.size))
+                .onTapGesture {
+                    selectedEmojis.removeAll()
+                }
                 if document.backgroundImageFetchStatus == .fetching {
                     ProgressView().scaleEffect(2) 
                 } else {
