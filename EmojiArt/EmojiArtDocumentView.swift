@@ -43,7 +43,7 @@ struct EmojiArtDocumentView: View {
                             .onTapGesture {
                                 selectEmoji(emoji: emoji)
                             }
-                            .gesture(emoji.isSelected ? dragGesture(emoji: emoji): nil)
+                            .gesture(emoji.isSelected ? dragGesture() : nil)
                     }
                 }
             }
@@ -51,7 +51,8 @@ struct EmojiArtDocumentView: View {
             .onDrop(of: [.plainText, .url, .image], isTargeted: nil) { providers, location in
                 return drop(providers: providers, at: location, in: geometry)
             }
-            .gesture(panGesture().simultaneously(with:zoomGesture()))
+            .gesture(!document.emojis.contains(where: {$0.isSelected}) ? panGesture().simultaneously(with:zoomGesture()) : nil)
+            .gesture(document.emojis.contains(where: {$0.isSelected}) ? panGesture().simultaneously(with:scaleGesture()): nil)
         }
     }
     
@@ -123,8 +124,25 @@ struct EmojiArtDocumentView: View {
     }
     
     @GestureState private var gestureDragOffset: CGSize = .zero
+    @GestureState private var gestureStateEmojiScale: CGFloat = 1
     
-    private func dragGesture(emoji: EmojiArtModel.Emoji) -> some Gesture {
+    private func scaleGesture() -> some Gesture {
+        MagnificationGesture()
+            .updating($gestureStateEmojiScale, body: { latestGestureScale, gestureStateEmojiScale, _ in
+                gestureStateEmojiScale = latestGestureScale
+            })
+            .onEnded { gestureScaleAtEnd in
+                for emoji in document.emojis {
+                    if emoji.isSelected {
+                        withAnimation {
+                            document.scaleEmoji(emoji, by: gestureScaleAtEnd)
+                        }
+                    }
+                }
+            }
+    }
+
+    private func dragGesture() -> some Gesture {
 
         DragGesture()
             .updating($gestureDragOffset) { latestDragGestureValue, gestureDragOffset, _ in
