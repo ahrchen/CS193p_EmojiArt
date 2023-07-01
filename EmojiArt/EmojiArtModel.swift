@@ -16,6 +16,7 @@ struct EmojiArtModel {
         var x: Int
         var y: Int
         var size: Int
+        var isSelected: Bool
         let id: Int
         
         fileprivate init(text: String, x: Int, y: Int, size: Int, id: Int) {
@@ -24,6 +25,7 @@ struct EmojiArtModel {
             self.y = y
             self.size = size
             self.id = id
+            self.isSelected = false
         }
     }
     
@@ -37,6 +39,5 @@ struct EmojiArtModel {
         uniqueEmojiId += 1
         emojis.append(Emoji(text: text, x: location.x, y: location.y, size: size, id: uniqueEmojiId))
     }
-    
 
 }

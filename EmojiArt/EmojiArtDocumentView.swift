@@ -39,12 +39,11 @@ struct EmojiArtDocumentView: View {
                             .font(.system(size: fontSize(for: emoji)))
                             .scaleEffect(zoomScale)
                             .position(position(for: emoji, in: geometry))
-                            .shadow(color: selectedEmojis.contains(where: { selectedEmoji in
-                                selectedEmoji.id == emoji.id
-                            }) ? Color.blue : Color.white, radius: 5)
+                            .shadow(color: emoji.isSelected ? Color.blue : Color.white, radius: 5)
                             .onTapGesture {
                                 selectEmoji(emoji: emoji)
                             }
+                            .gesture(emoji.isSelected ? dragGesture(emoji: emoji): nil)
                     }
                 }
             }
@@ -57,13 +56,7 @@ struct EmojiArtDocumentView: View {
     }
     
     private func selectEmoji(emoji: EmojiArtModel.Emoji) {
-        if let selectedEmojiIndex = selectedEmojis.firstIndex(where: { selectedEmoji in
-            selectedEmoji.id == emoji.id
-        }) {
-            selectedEmojis.remove(at: selectedEmojiIndex)
-        } else {
-            selectedEmojis.append(emoji)
-        }
+        document.selectEmoji(emoji)
     }
     
     private func drop(providers: [NSItemProvider], at location: CGPoint, in geometry: GeometryProxy) -> Bool {
@@ -92,7 +85,10 @@ struct EmojiArtDocumentView: View {
     }
     
     private func position(for emoji: EmojiArtModel.Emoji, in geometry: GeometryProxy ) -> CGPoint {
-        convertFromEmojiCoordinates((emoji.x, emoji.y), in: geometry)
+        let x = emoji.x + (emoji.isSelected ? Int(gestureDragOffset.width) : 0)
+        let y = emoji.y + (emoji.isSelected ? Int(gestureDragOffset.height) : 0)
+        return convertFromEmojiCoordinates((x, y), in: geometry)
+
     }
     private func convertToEmojiCoordinates(_ location: CGPoint, in geometry: GeometryProxy) -> (x: Int, y: Int) {
         let center = geometry.frame(in: .local).center
@@ -124,6 +120,24 @@ struct EmojiArtDocumentView: View {
     
     private var panOffset: CGSize {
         (steadyStatePanOffset + gesturePanOffset) * zoomScale
+    }
+    
+    @GestureState private var gestureDragOffset: CGSize = .zero
+    
+    private func dragGesture(emoji: EmojiArtModel.Emoji) -> some Gesture {
+
+        DragGesture()
+            .updating($gestureDragOffset) { latestDragGestureValue, gestureDragOffset, _ in
+                gestureDragOffset = (latestDragGestureValue.translation / zoomScale)
+            }
+            .onEnded { finalDragGestureValue in
+                for emoji in document.emojis {
+                    if emoji.isSelected {
+                        document.moveEmoji(emoji, by: finalDragGestureValue.translation / zoomScale)
+                    }
+                }
+            }
+            
     }
     
     private func panGesture() -> some Gesture {

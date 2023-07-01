@@ -79,6 +79,12 @@ class EmojiArtDocument: ObservableObject {
         }
     }
     
+    func selectEmoji(_ emoji: EmojiArtModel.Emoji) {
+        if let index = emojiArt.emojis.index(matching: emoji) {
+            emojiArt.emojis[index].isSelected.toggle()
+        }
+    }
+    
     func scaleEmoji(_ emoji: EmojiArtModel.Emoji, by scale: CGFloat) {
         if let index = emojiArt.emojis.index(matching: emoji) {
             emojiArt.emojis[index].size = Int((CGFloat(emojiArt.emojis[index].size) * scale).rounded(.toNearestOrAwayFromZero))
