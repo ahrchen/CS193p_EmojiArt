@@ -85,6 +85,10 @@ class EmojiArtDocument: ObservableObject {
         }
     }
     
+    func deleteSelectedEmoji() {
+        emojiArt.emojis.removeAll(where: {$0.isSelected})
+    }
+    
     func scaleEmoji(_ emoji: EmojiArtModel.Emoji, by scale: CGFloat) {
         if let index = emojiArt.emojis.index(matching: emoji) {
             emojiArt.emojis[index].size = Int((CGFloat(emojiArt.emojis[index].size) * scale).rounded(.toNearestOrAwayFromZero))

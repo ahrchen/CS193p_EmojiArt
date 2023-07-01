@@ -46,6 +46,22 @@ struct EmojiArtDocumentView: View {
                             .gesture(emoji.isSelected ? dragGesture() : nil)
                     }
                 }
+                if document.emojis.contains(where: {$0.isSelected}) {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button {
+                                document.deleteSelectedEmoji()
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.title)
+                            }
+                            .padding(10)
+                        }
+                        Spacer()
+                    }
+                }
+
             }
             .clipped()
             .onDrop(of: [.plainText, .url, .image], isTargeted: nil) { providers, location in
