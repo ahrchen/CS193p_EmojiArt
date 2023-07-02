@@ -85,6 +85,12 @@ class EmojiArtDocument: ObservableObject {
         }
     }
     
+    func draggingEmoji(_ emoji: EmojiArtModel.Emoji, isDragging: Bool) {
+        if let index = emojiArt.emojis.index(matching: emoji) {
+            emojiArt.emojis[index].isDragging = isDragging
+        }
+    }
+    
     func deleteSelectedEmoji() {
         emojiArt.emojis.removeAll(where: {$0.isSelected})
     }

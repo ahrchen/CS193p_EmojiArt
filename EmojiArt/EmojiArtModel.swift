@@ -17,6 +17,7 @@ struct EmojiArtModel {
         var y: Int
         var size: Int
         var isSelected: Bool
+        var isDragging: Bool
         let id: Int
         
         fileprivate init(text: String, x: Int, y: Int, size: Int, id: Int) {
@@ -26,6 +27,7 @@ struct EmojiArtModel {
             self.size = size
             self.id = id
             self.isSelected = false
+            self.isDragging = false
         }
     }
     
