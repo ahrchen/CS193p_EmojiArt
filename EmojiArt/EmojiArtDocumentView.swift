@@ -34,7 +34,6 @@ struct EmojiArtDocumentView: View {
                     ForEach(document.emojis) { emoji in
                         Text(emoji.text)
                             .font(.system(size: fontSize(for: emoji)))
-                            .scaleEffect(zoomScale)
                             .position(position(for: emoji, in: geometry))
                             .shadow(color: emoji.isSelected ? Color.blue : Color.white, radius: 5)
                             .onTapGesture {
@@ -132,7 +131,7 @@ struct EmojiArtDocumentView: View {
     }
     
     private func fontSize(for emoji: EmojiArtModel.Emoji) -> CGFloat {
-        CGFloat(emoji.size)
+        CGFloat(emoji.size) * (emoji.isSelected ? gestureStateEmojiScale * zoomScale : zoomScale)
     }
     
     @State private var steadyStateZoomScale: CGFloat = 1
@@ -157,9 +156,7 @@ struct EmojiArtDocumentView: View {
             .onEnded { gestureScaleAtEnd in
                 for emoji in document.emojis {
                     if emoji.isSelected {
-                        withAnimation {
-                            document.scaleEmoji(emoji, by: gestureScaleAtEnd)
-                        }
+                        document.scaleEmoji(emoji, by: gestureScaleAtEnd)
                     }
                 }
             }
@@ -218,7 +215,6 @@ struct EmojiArtDocumentView: View {
             })
             .onEnded { gestureScaleAtEnd in
                 steadyStateZoomScale *= gestureScaleAtEnd
-                
             }
     }
     
