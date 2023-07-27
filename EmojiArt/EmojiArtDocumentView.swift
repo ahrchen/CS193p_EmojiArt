@@ -15,7 +15,7 @@ struct EmojiArtDocumentView: View {
     var body: some View {
         VStack(spacing: 0) {
             documentBody
-            palette
+            PaletteChooser(emojiFontSize: defaultEmojiFontSize)
         }
     }
     
@@ -66,7 +66,36 @@ struct EmojiArtDocumentView: View {
             }
             .gesture(!document.emojis.contains(where: {$0.isSelected}) ? panGesture().simultaneously(with:zoomGesture()) : nil)
             .gesture(document.emojis.contains(where: {$0.isSelected}) ? panGesture().simultaneously(with:scaleGesture()): nil)
+            .alert(item: $alertToShow) { alertToShow in
+                alertToShow.alert()
+            }
+            .onChange(of: document.backgroundImageFetchStatus) { status in
+                switch status {
+                case .failed(let url):
+                    showBackgroundImageFetchFailedAlert(url)
+                default:
+                    break
+                }
+            }
+            .onReceive(document.$backgroundImage) { image in
+                if autozoom {
+                    zoomToFit(image, in: geometry.size)
+                }
+            }
         }
+    }
+    
+    @State private var autozoom = false
+    @State private var alertToShow: IdentifiableAlert?
+    
+    private func showBackgroundImageFetchFailedAlert(_ url: URL) {
+        alertToShow = IdentifiableAlert(id: "fetch failed: " + url.absoluteString, alert: {
+            Alert(
+                title: Text("Background Image Fetch"),
+                message:  Text("Couldn't load image from \(url)."),
+                dismissButton: .default(Text("OK"))
+            )
+        })
     }
     
     private func selectEmoji(emoji: EmojiArtModel.Emoji) {
@@ -75,11 +104,13 @@ struct EmojiArtDocumentView: View {
     
     private func drop(providers: [NSItemProvider], at location: CGPoint, in geometry: GeometryProxy) -> Bool {
         var found = providers.loadObjects(ofType: URL.self) { url in
+            autozoom = true
             document.setBackground(EmojiArtModel.Background.url(url.imageURL))
         }
         if !found {
             found = providers.loadObjects(ofType: UIImage.self, using: { image in
                 if let data = image.jpegData(compressionQuality: 1.0) {
+                    autozoom = true 
                     document.setBackground(.imageData(data))
                 }
             })
@@ -134,10 +165,10 @@ struct EmojiArtDocumentView: View {
         CGFloat(emoji.size) * (emoji.isSelected ? gestureStateEmojiScale * zoomScale : zoomScale)
     }
     
-    @State private var steadyStateZoomScale: CGFloat = 1
+    @SceneStorage("EmojiArtDocumentView.steadyStateZoomScale") private var steadyStateZoomScale: CGFloat = 1
     @GestureState private var gestureZoomScale: CGFloat = 1
     
-    @State private var steadyStatePanOffset: CGSize = .zero
+    @SceneStorage("EmojiArtDocumentView.steadyStatePanOffset") private var steadyStatePanOffset: CGSize = .zero
     @GestureState private var gesturePanOffset: CGSize = .zero
     
     private var panOffset: CGSize {
@@ -238,27 +269,7 @@ struct EmojiArtDocumentView: View {
     
     
     
-    var palette: some View {
-        ScrollingEmojisView(emojis: randomEmojis)
-            .font(.system(size: defaultEmojiFontSize))
-    }
-    
-    let randomEmojis = "😀😂🤣😊😍🤩😘😜🤪😝🤑🤗🤔🤨😐😑😶🙄😏😒🤤😴🥱😷🤒🤕🤢🤮🥴"
-}
 
-struct ScrollingEmojisView: View {
-    let emojis: String
-    var body: some View {
-        ScrollView(.horizontal) {
-            HStack {
-                ForEach(emojis.map { String($0) }, id: \.self) { emoji in
-                    Text(emoji)
-                        .onDrag { NSItemProvider(object: emoji as NSString) }
-                }
-            }
-        }
-        
-    }
 }
 
 

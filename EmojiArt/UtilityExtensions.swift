@@ -103,6 +103,58 @@ extension URL {
     }
 }
 
+// we could do the same thing when it comes to removing an element
+// but we have to add that to a different protocol
+// because Collection works for immutable collections of things
+// the "mutable" one is RangeReplaceableCollection
+// not only could we add remove
+// but we could add a subscript which takes a copy of one of the elements
+// and uses its Identifiable-ness to subscript into the Collection
+// this is an awesome way to create Bindings into an Array in a ViewModel
+// (since any Published var in an ObservableObject can be bound to via $)
+// (even vars on that Published var or subscripts on that var)
+// (or subscripts on vars on that var, etc.)
+
+extension RangeReplaceableCollection where Element: Identifiable {
+    mutating func remove(_ element: Element) {
+        if let index = index(matching: element) {
+            remove(at: index)
+        }
+    }
+
+    subscript(_ element: Element) -> Element {
+        get {
+            if let index = index(matching: element) {
+                return self[index]
+            } else {
+                return element
+            }
+        }
+        set {
+            if let index = index(matching: element) {
+                replaceSubrange(index...index, with: [newValue])
+            }
+        }
+    }
+}
+
+// some extensions to String and Character
+// to help us with managing our Strings of emojis
+// we want them to be "emoji only"
+// (thus isEmoji below)
+// and we don't want them to have repeated emojis
+// (thus withoutDuplicateCharacters below)
+
+extension String {
+    var removingDuplicateCharacters: String {
+        reduce(into: "") { sofar, element in
+            if !sofar.contains(element) {
+                sofar.append(element)
+            }
+        }
+    }
+}
+
 extension Character {
     var isEmoji: Bool {
         // Swift does not have a way to ask if a Character isEmoji
@@ -149,3 +201,29 @@ extension CGSize {
     }
 }
 
+// add RawRepresentable protocol conformance to CGSize and CGFloat
+// so that they can be used with @SceneStorage
+// we do this by first providing default implementations of rawValue and init(rawValue:)
+// in RawRepresentable when the thing in question is Codable(which both CGFloat and CGSize are)
+// then all it takes to make something that is Codable be RawRepresentable is to declare it to be so
+// (it will then get the default implementaion needed to be a RawRepresentable)
+
+extension RawRepresentable where Self: Codable {
+    public var rawValue: String {
+        if let json = try? JSONEncoder().encode(self), let string = String(data: json, encoding: .utf8) {
+            return string
+        } else {
+            return ""
+        }
+    }
+    public init?(rawValue: String) {
+        if let value = try? JSONDecoder().decode(Self.self, from: Data(rawValue.utf8)) {
+            self = value
+        } else {
+            return nil
+        }
+    }
+}
+
+extension CGSize: RawRepresentable {}
+extension CGFloat: RawRepresentable {}
