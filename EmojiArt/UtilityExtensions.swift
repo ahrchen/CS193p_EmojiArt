@@ -227,3 +227,17 @@ extension RawRepresentable where Self: Codable {
 
 extension CGSize: RawRepresentable {}
 extension CGFloat: RawRepresentable {}
+
+// some extensions to UndoManager
+// to help us with getting undoMenuItemTitle and
+// redoMenuItemTitle
+
+extension UndoManager {
+    var optionalUndoMenuItemTitle: String? {
+        canUndo ? undoMenuItemTitle : nil
+    }
+    
+    var optionalRedoMenuItemTitle: String? {
+        canRedo ? redoMenuItemTitle : nil
+    }
+}

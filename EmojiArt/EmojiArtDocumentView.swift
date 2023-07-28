@@ -10,6 +10,8 @@ import SwiftUI
 struct EmojiArtDocumentView: View {
     @ObservedObject var document: EmojiArtDocument
     
+    @Environment(\.undoManager) var undoManager
+    
     let defaultEmojiFontSize: CGFloat = 40
     
     var body: some View {
@@ -48,7 +50,7 @@ struct EmojiArtDocumentView: View {
                         HStack {
                             Spacer()
                             Button {
-                                document.deleteSelectedEmoji()
+                                document.deleteSelectedEmoji(undoManager: undoManager)
                             } label: {
                                 Image(systemName: "trash")
                                     .font(.title)
@@ -82,6 +84,12 @@ struct EmojiArtDocumentView: View {
                     zoomToFit(image, in: geometry.size)
                 }
             }
+            .toolbar {
+                UndoButton(
+                    undo: undoManager?.optionalUndoMenuItemTitle,
+                    redo: undoManager?.optionalRedoMenuItemTitle
+                    )
+            }
         }
     }
     
@@ -105,13 +113,13 @@ struct EmojiArtDocumentView: View {
     private func drop(providers: [NSItemProvider], at location: CGPoint, in geometry: GeometryProxy) -> Bool {
         var found = providers.loadObjects(ofType: URL.self) { url in
             autozoom = true
-            document.setBackground(EmojiArtModel.Background.url(url.imageURL))
+            document.setBackground(EmojiArtModel.Background.url(url.imageURL), undoManager: undoManager)
         }
         if !found {
             found = providers.loadObjects(ofType: UIImage.self, using: { image in
                 if let data = image.jpegData(compressionQuality: 1.0) {
                     autozoom = true 
-                    document.setBackground(.imageData(data))
+                    document.setBackground(.imageData(data), undoManager: undoManager)
                 }
             })
         }
@@ -120,7 +128,8 @@ struct EmojiArtDocumentView: View {
                 if let emoji = string.first, emoji.isEmoji {
                     document.addEmoji(String(emoji),
                       at: convertToEmojiCoordinates(location, in: geometry),
-                      size: defaultEmojiFontSize / zoomScale
+                      size: defaultEmojiFontSize / zoomScale ,
+                                      undoManager: undoManager
                     )
                 }
                 
@@ -187,7 +196,7 @@ struct EmojiArtDocumentView: View {
             .onEnded { gestureScaleAtEnd in
                 for emoji in document.emojis {
                     if emoji.isSelected {
-                        document.scaleEmoji(emoji, by: gestureScaleAtEnd)
+                        document.scaleEmoji(emoji, by: gestureScaleAtEnd, undoManager: undoManager)
                     }
                 }
             }
@@ -204,7 +213,7 @@ struct EmojiArtDocumentView: View {
                 
             }
             .onEnded { finalDragGestureValue in
-                document.moveEmoji(emoji, by: finalDragGestureValue.translation / zoomScale)
+                document.moveEmoji(emoji, by: finalDragGestureValue.translation / zoomScale, undoManager: undoManager)
                 document.draggingEmoji(emoji, isDragging: false)
             }
     }
@@ -218,7 +227,7 @@ struct EmojiArtDocumentView: View {
             .onEnded { finalDragGestureValue in
                 for emoji in document.emojis {
                     if emoji.isSelected {
-                        document.moveEmoji(emoji, by: finalDragGestureValue.translation / zoomScale)
+                        document.moveEmoji(emoji, by: finalDragGestureValue.translation / zoomScale, undoManager: undoManager)
                     }
                 }
             }
